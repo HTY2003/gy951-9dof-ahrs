@@ -2,7 +2,9 @@ GY951 AHRS
 ---
 
 **9 Degree of Measurement Attitude and Heading Reference System** for GY-951, both the version with the HMC5883L magnetometer and IST8310 magnetometer.
+
 This is a modified version of the Razor AHRS code written by ptrbrtz, since the GY was a clone of the Sparkfun Razor, but the Razor does not have the IST8310.
+
 Calibration and usage is mostly the same.
 
 Tutorial
