@@ -1,8 +1,5 @@
 /***************************************************************************************************************
-* Razor AHRS Firmware v1.4.2
-* 9 Degree of Measurement Attitude and Heading Reference System
-* for Sparkfun "9DOF Razor IMU" (SEN-10125 and SEN-10736)
-* and "9DOF Sensor Stick" (SEN-10183, 10321 and SEN-10724)
+* Razor AHRS Firmware for GY-951
 *
 * Released under GNU GPL (General Public License) v3.0
 * Copyright (C) 2013 Peter Bartz [http://ptrbrtz.net]
@@ -19,64 +16,15 @@
 *   * Updated code (http://groups.google.com/group/sf_9dof_ahrs_update) by David Malik (david.zsolt.malik@gmail.com)
 *     for new Sparkfun 9DOF Razor hardware (SEN-10125).
 *
-*   * Updated and extended by Peter Bartz (peter-bartz@gmx.de):
-*     * v1.3.0
-*       * Cleaned up, streamlined and restructured most of the code to make it more comprehensible.
-*       * Added sensor calibration (improves precision and responsiveness a lot!).
-*       * Added binary yaw/pitch/roll output.
-*       * Added basic serial command interface to set output modes/calibrate sensors/synch stream/etc.
-*       * Added support to synch automatically when using Rovering Networks Bluetooth modules (and compatible).
-*       * Wrote new easier to use test program (using Processing).
-*       * Added support for new version of "9DOF Razor IMU": SEN-10736.
-*       --> The output of this code is not compatible with the older versions!
-*       --> A Processing sketch to test the tracker is available.
-*     * v1.3.1
-*       * Initializing rotation matrix based on start-up sensor readings -> orientation OK right away.
-*       * Adjusted gyro low-pass filter and output rate settings.
-*     * v1.3.2
-*       * Adapted code to work with new Arduino 1.0 (and older versions still).
-*     * v1.3.3
-*       * Improved synching.
-*     * v1.4.0
-*       * Added support for SparkFun "9DOF Sensor Stick" (versions SEN-10183, SEN-10321 and SEN-10724).
-*     * v1.4.1
-*       * Added output modes to read raw and/or calibrated sensor data in text or binary format.
-*       * Added static magnetometer soft iron distortion compensation
-*     * v1.4.2
-*       * (No core firmware changes)
+*   * Updated and extended by Peter Bartz (peter-bartz@gmx.de)
 *
-* TODOs:
-*   * Allow optional use of EEPROM for storing and reading calibration values.
-*   * Use self-test and temperature-compensation features of the sensors.
-***************************************************************************************************************/
-
-/*
-  "9DOF Razor IMU" hardware versions: SEN-10125 and SEN-10736
-
-  ATMega328@3.3V, 8MHz
-
-  ADXL345  : Accelerometer
-  HMC5843  : Magnetometer on SEN-10125
-  HMC5883L : Magnetometer on SEN-10736
-  ITG-3200 : Gyro
-
-  Arduino IDE : Select board "Arduino Pro or Pro Mini (3.3v, 8Mhz) w/ATmega328"
-*/
-
-/*
-  "9DOF Sensor Stick" hardware versions: SEN-10183, SEN-10321 and SEN-10724
-
-  ADXL345  : Accelerometer
-  HMC5843  : Magnetometer on SEN-10183 and SEN-10321
-  HMC5883L : Magnetometer on SEN-10724
-  ITG-3200 : Gyro
-*/
+*   * Modified by Heng Teng Yi to work with GY-951
 
 /*
   Axis definition (differs from definition printed on the board!):
-    X axis pointing forward (towards the short edge with the connector holes)
+    X axis pointing forward (from long edge with connector pins to long edge with M3 mounting hole)
     Y axis pointing to the right
-    and Z axis pointing down.
+    and Z axis pointing down
     
   Positive yaw   : clockwise
   Positive roll  : right wing down
@@ -98,6 +46,8 @@
       "#ob" - Output angles in BINARY format (yaw/pitch/roll as binary float, so one output frame
               is 3x4 = 12 bytes long).
       "#ot" - Output angles in TEXT format (Output frames have form like "#YPR=-142.28,-5.38,33.52",
+              followed by carriage return and line feed [\r\n]).
+      "#oy" - Output yaw angle in TEXT format (Output frames have form like "12.38",
               followed by carriage return and line feed [\r\n]).
       
       // Sensor calibration
@@ -148,8 +98,6 @@
   Byte order of binary output is little-endian: least significant byte comes first.
 */
 
-
-
 /*****************************************************************/
 /*********** USER SETUP AREA! Set your options here! *************/
 /*****************************************************************/
@@ -157,12 +105,8 @@
 // HARDWARE OPTIONS
 /*****************************************************************/
 // Select your hardware here by uncommenting one line!
-//#define HW__VERSION_CODE 10125 // SparkFun "9DOF Razor IMU" version "SEN-10125" (HMC5843 magnetometer)
-//#define HW__VERSION_CODE 10736 // SparkFun "9DOF Razor IMU" version "SEN-10736" (HMC5883L magnetometer)
-//#define HW__VERSION_CODE 10183 // SparkFun "9DOF Sensor Stick" version "SEN-10183" (HMC5843 magnetometer)
-//#define HW__VERSION_CODE 10321 // SparkFun "9DOF Sensor Stick" version "SEN-10321" (HMC5843 magnetometer)
-//#define HW__VERSION_CODE 10724 // SparkFun "9DOF Sensor Stick" version "SEN-10724" (HMC5883L magnetometer)
-
+#define HW__VERSION_CODE 8310 // GY-951 (IST8310 magnetometer)
+//#define HW__VERSION_CODE 5883 // GY-951 (HMC5883L magnetometer)
 
 // OUTPUT OPTIONS
 /*****************************************************************/
@@ -172,7 +116,7 @@
 // Sensor data output interval in milliseconds
 // This may not work, if faster than 20ms (=50Hz)
 // Code is tuned for 20ms, so better leave it like that
-#define OUTPUT__DATA_INTERVAL 20  // in milliseconds
+#define OUTPUT__DATA_INTERVAL 15  // in milliseconds
 
 // Output mode definitions (do not change)
 #define OUTPUT__MODE_CALIBRATE_SENSORS 0 // Outputs sensor min/max values as text for manual calibration
@@ -180,12 +124,14 @@
 #define OUTPUT__MODE_SENSORS_CALIB 2 // Outputs calibrated sensor values for all 9 axes
 #define OUTPUT__MODE_SENSORS_RAW 3 // Outputs raw (uncalibrated) sensor values for all 9 axes
 #define OUTPUT__MODE_SENSORS_BOTH 4 // Outputs calibrated AND raw sensor values for all 9 axes
+#define OUTPUT__MODE_YAW_ANGLE 4 // Outputs yaw in degrees
+
 // Output format definitions (do not change)
 #define OUTPUT__FORMAT_TEXT 0 // Outputs data as text
 #define OUTPUT__FORMAT_BINARY 1 // Outputs data as binary float
 
 // Select your startup output mode and format here!
-int output_mode = OUTPUT__MODE_ANGLES;
+int output_mode = OUTPUT__MODE_YAW_ANGLE;
 int output_format = OUTPUT__FORMAT_TEXT;
 
 // Select if serial continuous streaming output is enabled per default on startup.
@@ -193,7 +139,7 @@ int output_format = OUTPUT__FORMAT_TEXT;
 
 // If set true, an error message will be output if we fail to read sensor data.
 // Message format: "!ERR: reading <sensor>", followed by "\r\n".
-boolean output_errors = false;  // true or false
+boolean output_errors = true;  // true or false
 
 // Bluetooth
 // You can set this to true, if you have a Rovering Networks Bluetooth Module attached.
@@ -289,20 +235,20 @@ const float magn_ellipsoid_transform[3][3] = {{0.902, -0.00354, 0.000636}, {-0.0
 /****************** END OF USER SETUP AREA!  *********************/
 /*****************************************************************/
 
-
-
-
-
-
-
-
-
-
 // Check if hardware version code is defined
 #ifndef HW__VERSION_CODE
   // Generate compile error
   #error YOU HAVE TO SELECT THE HARDWARE YOU ARE USING! See "HARDWARE OPTIONS" in "USER SETUP AREA" at top of Razor_AHRS.ino!
 #endif
+
+
+
+
+
+
+
+
+
 
 #include <Wire.h>
 
@@ -551,6 +497,11 @@ void loop()
           output_mode = OUTPUT__MODE_ANGLES;
           output_format = OUTPUT__FORMAT_TEXT;
         }
+        else if (output_param == 'y') // Output angles as _t_ext
+        {
+          output_mode = OUTPUT__MODE_YAW_ANGLE;
+          output_format = OUTPUT__FORMAT_TEXT;
+        }
         else if (output_param == 'b') // Output angles in _b_inary format
         {
           output_mode = OUTPUT__MODE_ANGLES;
@@ -644,6 +595,20 @@ void loop()
       Euler_angles();
       
       if (output_stream_on || output_single_on) output_angles();
+    }
+    else if (output_mode == OUTPUT__MODE_YAW_ANGLE)  // Output yaw angle only
+    {
+      // Apply sensor calibration
+      compensate_sensor_errors();
+    
+      // Run DCM algorithm
+      Compass_Heading(); // Calculate magnetic heading
+      Matrix_update();
+      Normalize();
+      Drift_correction();
+      Euler_angles();
+      
+      if (output_stream_on || output_single_on) output_yaw_angle();
     }
     else  // Output sensor values
     {      
