@@ -1,14 +1,9 @@
-Razor AHRS v1.4.2
+GY951 AHRS
 ---
 
-**9 Degree of Measurement Attitude and Heading Reference System** for Sparkfun *9DOF Razor IMU* (SEN-10125 and SEN-10736) and SparkFun *9DOF Sensor Stick* (SEN-10183, SEN-10321 and SEN-10724)
-
-Infos, updates, bug reports, contributions and feedback: https://github.com/ptrbrtz/razor-9dof-ahrs
-
-Download
----
-
-Clone the [repository on GitHub](https://github.com/ptrbrtz/razor-9dof-ahrs) or [download as .zip](https://github.com/ptrbrtz/razor-9dof-ahrs/archive/Release-v1.4.2.zip).
+**9 Degree of Measurement Attitude and Heading Reference System** for GY-951, both the version with the HMC5883L magnetometer and IST8310 magnetometer.
+This is a modified version of the Razor AHRS code written by ptrbrtz, since the GY was a clone of the Sparkfun Razor, but the Razor does not have the IST8310.
+Calibration and usage is mostly the same.
 
 Tutorial
 ---
