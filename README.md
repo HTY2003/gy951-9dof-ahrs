@@ -1,4 +1,4 @@
-GY951 AHRS
+GY-951 AHRS
 ---
 
 **9 Degree of Measurement Attitude and Heading Reference System** for GY-951, both the version with the HMC5883L magnetometer and IST8310 magnetometer.
