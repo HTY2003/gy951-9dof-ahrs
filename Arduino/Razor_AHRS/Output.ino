@@ -20,6 +20,20 @@ void output_angles()
   }
 }
 
+void output_yaw_angle()
+{
+  if (output_format == OUTPUT__FORMAT_BINARY)
+  {
+    float ypr[1];  
+    ypr[0] = TO_DEG(yaw);
+    Serial.write((byte*) ypr, 4);
+  }
+  else if (output_format == OUTPUT__FORMAT_TEXT)
+    Serial.println(TO_DEG(yaw));
+  
+}
+
+
 void output_calibration(int calibration_sensor)
 {
   if (calibration_sensor == 0)  // Accelerometer
@@ -129,4 +143,3 @@ void output_sensors()
     }
   }
 }
-
