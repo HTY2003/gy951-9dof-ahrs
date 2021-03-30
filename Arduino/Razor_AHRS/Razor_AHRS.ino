@@ -132,7 +132,7 @@
 
 // Select your startup output mode and format here!
 int output_mode = OUTPUT__MODE_YAW_ANGLE;
-int output_format = OUTPUT__FORMAT_TEXT;
+int output_format = OUTPUT__FORMAT_BINARY;
 
 // Select if serial continuous streaming output is enabled per default on startup.
 #define OUTPUT__STARTUP_STREAM_ON true  // true or false
