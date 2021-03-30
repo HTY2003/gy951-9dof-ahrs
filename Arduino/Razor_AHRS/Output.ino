@@ -24,9 +24,14 @@ void output_yaw_angle()
 {
   if (output_format == OUTPUT__FORMAT_BINARY)
   {
-    float ypr[1];  
-    ypr[0] = TO_DEG(yaw);
-    Serial.write((byte*) ypr, 4);
+    byte value, sign;
+    int yawD;
+    yawD = TO_DEG(yaw);
+    value = abs(yawD);
+    if (yawD < 0) sign = (byte) 255;
+    else sign = (byte) 254;
+    //Serial.print(sign); Serial.print("\t"); Serial.println(value);
+    Serial.write(sign); Serial.write(value);
   }
   else if (output_format == OUTPUT__FORMAT_TEXT)
     Serial.println(TO_DEG(yaw));
