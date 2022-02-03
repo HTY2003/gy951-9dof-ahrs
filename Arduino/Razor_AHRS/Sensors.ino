@@ -144,7 +144,7 @@ void Read_Magn()
   if (i == 6)
   {
     magnetom[0] = -1 * (int16_t)((((uint16_t)buff[1]) << 8) | buff[0]);   // X axis (internal sensor -x axis)
-    magnetom[1] = -1 * (int16_t)(((((uint16_t)buff[3]) << 8) | buff[2])); // Y axis (internal sensor -y axis)
+    magnetom[1] = (int16_t)(((((uint16_t)buff[3]) << 8) | buff[2])); // Y axis (internal sensor -y axis)
     magnetom[2] = -1 * (int16_t)(((((uint16_t)buff[5]) << 8) | buff[4])); // Z axis (internal sensor -z axis)
   }
 
@@ -211,7 +211,7 @@ void Read_Gyro()
   {
     gyro[0] = (int16_t)(((((uint16_t)buff[0]) << 8) | buff[1])); // X axis (internal sensor x axis)
     gyro[1] = -1 * (int16_t)(((((uint16_t)buff[2]) << 8) | buff[3])); // Y axis (internal sensor -y axis)
-    gyro[2] = -1 * (int16_t)(((((uint16_t)buff[4]) << 8) | buff[5])); // Z axis (internal sensor -z axis)
+    gyro[2] = (int16_t)(((((uint16_t)buff[4]) << 8) | buff[5])); // Z axis (internal sensor -z axis)
   }
   else
   {
